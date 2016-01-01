@@ -6,11 +6,25 @@
 #include <dbg.h>
 #include <stdlib.h>
 
-#define mu_suite_start() char* message = NULL
+
+typedef void (*mu_hook)();
+
+#define mu_suite_start(before_each, after_each) \
+  char* message = NULL; \
+  mu_hook _before_each = before_each; \
+  mu_hook _after_each = after_each;
+
 
 #define mu_assert(test, message) if (!(test)) { log_err(message); return message; }
 
-#define mu_run_test(test) debug("\n-----%s", " " #test); message = test(); tests_run++; if (message) return message;
+#define mu_run_test(test) \
+  debug("\n-----%s", " " #test); \
+  if (_before_each) _before_each(); \
+  message = test(); \
+  tests_run++; \
+  if (_after_each) _after_each(); \
+  if (message) \
+    return message;
 
 #define RUN_TESTS(name) int main(int argc, char *argv[]) {\
 	argc = 1; \
